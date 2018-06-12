@@ -1,5 +1,7 @@
 package shadow.sock.FreeSea.Core;
 
+import java.util.concurrent.Executors;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelOption;
@@ -70,14 +72,14 @@ public class FreeSea {
 		if(Epoll.isAvailable()){
 			try{
 				/**use epoll mode**/
-				MultithreadEventLoopGroup meg = new EpollEventLoopGroup(threads);
+				MultithreadEventLoopGroup meg = new EpollEventLoopGroup(threads, Executors.newCachedThreadPool());
 				LOG.info("Use epoll mode");
 				return meg;
 			}catch(Throwable t){
 				LOG.warn("Epoll exceptions:{}, use Nio", t.getMessage());
 			}
 		}
-		return new NioEventLoopGroup(threads);
+		return new NioEventLoopGroup(threads, Executors.newCachedThreadPool());
 	}
 	
 	
