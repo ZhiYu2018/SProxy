@@ -2,6 +2,11 @@
 1、Netty socks 5 代理实战项目
 2、该项目的特点：完全依赖于netty 的 流式处理模型 进行加密、解密、转发、状态变化。
 
+# 编译方法
+1、下载 Java 和 Maven
+2、Mvn clean package -DskipTests=true
+3、启动: Java -jar 
+
 # 部署
 1、Front 部署在本地。
    修改：SocksConf 这个类的 remoteaddr，用Sea 的真实IP。
