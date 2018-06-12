@@ -4,6 +4,9 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultithreadEventLoopGroup;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
@@ -19,7 +22,7 @@ public class FreeSea {
 	}
 	
 	private EventLoopGroup bossGroup;
-	private EventLoopGroup workerGroup;
+	private MultithreadEventLoopGroup workerGroup;
 	
 	public static FreeSea getServer(){
 		return LazyHolder.INSTANCE;
@@ -47,7 +50,7 @@ public class FreeSea {
 		int works = cpus * 2 + 2;
 		LOG.info("Start running listen port:{}, worker {}", port, works);
 		bossGroup = new NioEventLoopGroup(1);
-		workerGroup = new NioEventLoopGroup(works);
+		workerGroup = getEventLoopGroup(works);
 		try{
 			ServerBootstrap b = new ServerBootstrap();
 			b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
@@ -61,6 +64,20 @@ public class FreeSea {
 		}finally{
 			stop();
 		}
+	}
+	
+	private MultithreadEventLoopGroup getEventLoopGroup(int threads){
+		if(Epoll.isAvailable()){
+			try{
+				/**use epoll mode**/
+				MultithreadEventLoopGroup meg = new EpollEventLoopGroup(threads);
+				LOG.info("Use epoll mode");
+				return meg;
+			}catch(Throwable t){
+				LOG.warn("Epoll exceptions:{}, use Nio", t.getMessage());
+			}
+		}
+		return new NioEventLoopGroup(threads);
 	}
 	
 	
