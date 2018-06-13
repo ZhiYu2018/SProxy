@@ -51,7 +51,7 @@ public class FreeSea {
 		int cpus = Runtime.getRuntime().availableProcessors();
 		int works = cpus * 2 + 2;
 		LOG.info("Start running listen port:{}, worker {}", port, works);
-		bossGroup = new NioEventLoopGroup(1);
+		bossGroup = getAcceptEventLoopGroup();
 		workerGroup = getEventLoopGroup(works);
 		try{
 			ServerBootstrap b = new ServerBootstrap();
@@ -68,6 +68,21 @@ public class FreeSea {
 		}
 	}
 	
+	private MultithreadEventLoopGroup getAcceptEventLoopGroup(){
+		if(Epoll.isAvailable()){
+			try{
+				/**use epoll mode**/
+				MultithreadEventLoopGroup meg = new EpollEventLoopGroup(1);
+				LOG.info("Use epoll mode");
+				return meg;
+			}catch(Throwable t){
+				LOG.warn("Epoll exceptions:{}, use Nio", t.getMessage());
+			}
+		}
+		LOG.info("Use Nio mode");
+		return new NioEventLoopGroup(1);
+	}
+	
 	private MultithreadEventLoopGroup getEventLoopGroup(int threads){
 		if(Epoll.isAvailable()){
 			try{
@@ -79,6 +94,7 @@ public class FreeSea {
 				LOG.warn("Epoll exceptions:{}, use Nio", t.getMessage());
 			}
 		}
+		LOG.info("Use Nio mode");
 		return new NioEventLoopGroup(threads, Executors.newCachedThreadPool());
 	}
 	
