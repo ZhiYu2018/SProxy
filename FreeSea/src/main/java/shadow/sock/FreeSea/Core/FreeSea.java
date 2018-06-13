@@ -6,9 +6,6 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultithreadEventLoopGroup;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
@@ -24,7 +21,7 @@ public class FreeSea {
 	}
 	
 	private EventLoopGroup bossGroup;
-	private MultithreadEventLoopGroup workerGroup;
+	private NioEventLoopGroup workerGroup;
 	
 	public static FreeSea getServer(){
 		return LazyHolder.INSTANCE;
@@ -51,8 +48,8 @@ public class FreeSea {
 		int cpus = Runtime.getRuntime().availableProcessors();
 		int works = cpus * 2 + 2;
 		LOG.info("Start running listen port:{}, worker {}", port, works);
-		bossGroup = getAcceptEventLoopGroup();
-		workerGroup = getEventLoopGroup(works);
+		bossGroup = new NioEventLoopGroup(1);
+		workerGroup = new NioEventLoopGroup(works, Executors.newCachedThreadPool());
 		try{
 			ServerBootstrap b = new ServerBootstrap();
 			b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
@@ -67,36 +64,36 @@ public class FreeSea {
 			stop();
 		}
 	}
-	
-	private MultithreadEventLoopGroup getAcceptEventLoopGroup(){
-		if(Epoll.isAvailable()){
-			try{
-				/**use epoll mode**/
-				MultithreadEventLoopGroup meg = new EpollEventLoopGroup(1);
-				LOG.info("Use epoll mode");
-				return meg;
-			}catch(Throwable t){
-				LOG.warn("Epoll exceptions:{}, use Nio", t.getMessage());
-			}
-		}
-		LOG.info("Use Nio mode");
-		return new NioEventLoopGroup(1);
-	}
-	
-	private MultithreadEventLoopGroup getEventLoopGroup(int threads){
-		if(Epoll.isAvailable()){
-			try{
-				/**use epoll mode**/
-				MultithreadEventLoopGroup meg = new EpollEventLoopGroup(threads, Executors.newCachedThreadPool());
-				LOG.info("Use epoll mode");
-				return meg;
-			}catch(Throwable t){
-				LOG.warn("Epoll exceptions:{}, use Nio", t.getMessage());
-			}
-		}
-		LOG.info("Use Nio mode");
-		return new NioEventLoopGroup(threads, Executors.newCachedThreadPool());
-	}
+		
+//	private MultithreadEventLoopGroup getAcceptEventLoopGroup(){
+//		if(Epoll.isAvailable()){
+//			try{
+//				/**use epoll mode**/
+//				MultithreadEventLoopGroup meg = new EpollEventLoopGroup(1);
+//				LOG.info("Use epoll mode");
+//				return meg;
+//			}catch(Throwable t){
+//				LOG.warn("Epoll exceptions:{}, use Nio", t.getMessage());
+//			}
+//		}
+//		LOG.info("Use Nio mode");
+//		return new NioEventLoopGroup(1);
+//	}
+//	
+//	private MultithreadEventLoopGroup getEventLoopGroup(int threads){
+//		if(Epoll.isAvailable()){
+//			try{
+//				/**use epoll mode**/
+//				MultithreadEventLoopGroup meg = new EpollEventLoopGroup(threads, Executors.newCachedThreadPool());
+//				LOG.info("Use epoll mode");
+//				return meg;
+//			}catch(Throwable t){
+//				LOG.warn("Epoll exceptions:{}, use Nio", t.getMessage());
+//			}
+//		}
+//		LOG.info("Use Nio mode");
+//		return new NioEventLoopGroup(threads, Executors.newCachedThreadPool());
+//	}
 	
 	
 }
